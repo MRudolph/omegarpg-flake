@@ -22,6 +22,9 @@
               omegarpgSrc = omegarpg-src;
               qt = pkgs.qt5;
           };
+          omegarpg-server-with-config = pkgs.callPackage (import ./pkgs/omegarpg-server-with-config) {
+            omegarpg = omegarpg;
+          };
           default = omegarpg;
         };
         apps = rec {
