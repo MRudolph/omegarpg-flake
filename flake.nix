@@ -18,7 +18,7 @@
         });
       in rec {
         packages = rec {
-          omegarpg = pkgs.callPackage (import ./omegarpg.nix) {
+          omegarpg = pkgs.callPackage (import ./pkgs/omegarpg) {
               omegarpgSrc = omegarpg-src;
               qt = pkgs.qt5;
           };
