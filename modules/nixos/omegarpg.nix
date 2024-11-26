@@ -30,39 +30,7 @@ let
   };
 in
 {
-  config = lib.mkIf cfg.enable {
-    systemd.services.omegarpg = {
-      description = "OmegaRPG Server";
-      documentation = [ "https://foundryvtt.com/kb/" ];
-
-      after = [ "network-online.target" ];
-      wants = [ "network-online.target" ];
-      wantedBy = [ "multi-user.target" ];
-
-      serviceConfig = {
-        Restart = "always";
-        ExecStart = "${lib.getBin wrappedOmega}/bin/omega-rpg-server-with-config";
-        Environment = ''OMEGARPG_SERVER_CONFIG="${settingsFile}"'';
-        # hardening
-        DynamicUser = true;
-        PrivateTmp = true;
-        PrivateDevices = true;
-        DevicePolicy= "closed";
-        ProtectSystem = "full";
-        ProtectHome = true;
-        ProtectControlGroups = true;
-        ProtectKernelModules = true;
-        ProtectKernelTunables = true;
-        RestrictAddressFamilies= "AF_UNIX AF_INET AF_INET6 AF_NETLINK";
-        RestrictNamespaces = true;
-        RestrictRealtime = true;
-        RestrictSUIDSGID = true;
-        MemoryDenyWriteExecute = true;
-        LockPersonality = true;
-        NoNewPrivileges = true;
-      };
-    };
-  };
+  # settable options
   options = with types; {
     services.omegarpg = {
       enable = mkEnableOption ''
@@ -74,6 +42,13 @@ in
         default = flakePkgs.omegarpg;
         description = ''
           The key file for the cert. Is generated dynamically if not set. 
+        '';
+      };
+      domain = mkOption {
+        type = str;
+        default = "";
+        description = ''
+          The domain the server is using.
         '';
       };
       port = mkOption {
@@ -91,6 +66,7 @@ in
           Opens the port under {option}`services.omegarpg.port`.
         '';
       };
+      # app settings without system integration
       name = mkOption {
         type = str;
         default = "";
@@ -103,13 +79,6 @@ in
         default = false;
         description = ''
           Register the server with a meta server.
-        '';
-      };
-      domain = mkOption {
-        type = str;
-        default = "";
-        description = ''
-          The domain the server is using.
         '';
       };
       additionalMetaServers = mkOption {
@@ -142,6 +111,45 @@ in
           The admin password. NOTE: Setting the password this way is insecure.
         '';
       };
+    };
+  };
+  # effective system change
+  config = lib.mkIf cfg.enable {
+    #systemd service
+    systemd.services.omegarpg = {
+      description = "OmegaRPG Server";
+      documentation = [ "https://github.com/R-Rudolph/OmegaRPG" ];
+
+      after = [ "network-online.target" ];
+      wants = [ "network-online.target" ];
+      wantedBy = [ "multi-user.target" ];
+
+      serviceConfig = {
+        Restart = "always";
+        ExecStart = "${lib.getBin wrappedOmega}/bin/omega-rpg-server-with-config";
+        Environment = ''OMEGARPG_SERVER_CONFIG="${settingsFile}"'';
+        # hardening
+        DynamicUser = true;
+        PrivateTmp = true;
+        PrivateDevices = true;
+        DevicePolicy= "closed";
+        ProtectSystem = "full";
+        ProtectHome = true;
+        ProtectControlGroups = true;
+        ProtectKernelModules = true;
+        ProtectKernelTunables = true;
+        RestrictAddressFamilies= "AF_UNIX AF_INET AF_INET6 AF_NETLINK";
+        RestrictNamespaces = true;
+        RestrictRealtime = true;
+        RestrictSUIDSGID = true;
+        MemoryDenyWriteExecute = true;
+        LockPersonality = true;
+        NoNewPrivileges = true;
+      };
+    };
+    #firewall
+    networking.firewall = lib.mkIf cfg.openFirewall {
+      allowedTCPPorts = [ cfg.port ];
     };
   };
 }
