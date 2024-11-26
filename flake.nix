@@ -11,6 +11,9 @@
     };
   };
   outputs = { self, nixpkgs, omegarpg-src, flake-utils }:
+    {
+      nixosModules.omegarpg = (import ./modules/nixos/omegarpg.nix) self;
+    } // 
     flake-utils.lib.eachDefaultSystem (system:
       let
         pkgs = (import nixpkgs {
