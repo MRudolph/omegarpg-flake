@@ -24,15 +24,42 @@ let
     type = "OmegaRPG Server Settings File";
   };
   settingsFormat = pkgs.formats.json { };
-
   settingsFile = settingsFormat.generate "orpg_serversettings.json" serverSettings;
+  wrappedOmega = flakePkgs.omegarpg-server-with-config.override {
+    omegarpg = cfg.package;
+  };
 in
 {
   config = lib.mkIf cfg.enable {
-    environment.etc = {
-      example-configuration-file = {
-        source = settingsFile;
-        mode = "0444";
+    systemd.services.omegarpg = {
+      description = "OmegaRPG Server";
+      documentation = [ "https://foundryvtt.com/kb/" ];
+
+      after = [ "network-online.target" ];
+      wants = [ "network-online.target" ];
+      wantedBy = [ "multi-user.target" ];
+
+      serviceConfig = {
+        Restart = "always";
+        ExecStart = "${lib.getBin wrappedOmega}/bin/omega-rpg-server-with-config";
+        Environment = ''OMEGARPG_SERVER_CONFIG="${settingsFile}"'';
+        # hardening
+        DynamicUser = true;
+        PrivateTmp = true;
+        PrivateDevices = true;
+        DevicePolicy= "closed";
+        ProtectSystem = "full";
+        ProtectHome = true;
+        ProtectControlGroups = true;
+        ProtectKernelModules = true;
+        ProtectKernelTunables = true;
+        RestrictAddressFamilies= "AF_UNIX AF_INET AF_INET6 AF_NETLINK";
+        RestrictNamespaces = true;
+        RestrictRealtime = true;
+        RestrictSUIDSGID = true;
+        MemoryDenyWriteExecute = true;
+        LockPersonality = true;
+        NoNewPrivileges = true;
       };
     };
   };
@@ -51,7 +78,7 @@ in
       };
       port = mkOption {
         type = port;
-        default = 12345;
+        default = 7001;
         description = ''
           The diplay name of the server.
         '';
@@ -76,6 +103,13 @@ in
         default = false;
         description = ''
           Register the server with a meta server.
+        '';
+      };
+      domain = mkOption {
+        type = str;
+        default = "";
+        description = ''
+          The domain the server is using.
         '';
       };
       additionalMetaServers = mkOption {
