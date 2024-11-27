@@ -35,6 +35,14 @@
             type = "app";
             program = "${packages.omegarpg}/bin/OmegaRPG";
           };
+          omegarpg-server-cli = {
+            type = "app";
+            program = "${packages.omegarpg}/bin/OmegaRPG-Server-CLI";
+          };
+          omegarpg-server-gui = {
+            type = "app";
+            program = "${packages.omegarpg}/bin/OmegaRPG-Server-GUI";
+          };
           default = omegarpg;
         };
       }
